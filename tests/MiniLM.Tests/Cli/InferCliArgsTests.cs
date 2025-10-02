@@ -12,7 +12,6 @@ public sealed class InferCliArgsTests
         var args = new[]
         {
             "--checkpoint", "ckpt.json",
-            "--prompt", "Hi",
             "--max-tokens", "5",
             "--temperature", "0.9",
             "--top-k", "2",
@@ -23,7 +22,6 @@ public sealed class InferCliArgsTests
 
         var config = Program.ParseArgs(args);
         Assert.Equal("ckpt.json", config.CheckpointPath);
-        Assert.Equal("Hi", config.Prompt);
         Assert.Equal(5, config.MaxTokens);
         Assert.Equal(0.9f, config.Temperature);
         Assert.Equal(2, config.TopK);

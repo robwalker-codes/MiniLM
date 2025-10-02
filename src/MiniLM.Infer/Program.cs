@@ -34,8 +34,8 @@ public static class Program
 
             var tokenizer = new CharTokenizer(vocab);
             var sampler = new Sampler(config.Seed, config.Deterministic);
-            var result = sampler.Generate(tokenizer, model, config.Prompt, config.MaxTokens, config.Temperature, config.TopK);
-            Console.WriteLine(result);
+            Console.WriteLine("Press Ctrl+C or submit an empty prompt to exit.");
+            RunInteractiveLoop(tokenizer, model, sampler, config);
             return 0;
         }
         catch (Exception ex)
@@ -50,7 +50,6 @@ public static class Program
         var options = new[]
         {
             new ArgOption("checkpoint", true, Required: true),
-            new ArgOption("prompt", true, DefaultValue: string.Empty),
             new ArgOption("max-tokens", true, Validator: v => int.TryParse(v, out var value) && value > 0, DefaultValue: "200"),
             new ArgOption("temperature", true, Validator: v => float.TryParse(v, out var value) && value >= 0, DefaultValue: "0.8"),
             new ArgOption("top-k", true, Validator: v => int.TryParse(v, out var value) && value >= 0, DefaultValue: "0"),
@@ -64,7 +63,6 @@ public static class Program
         return new InferenceConfig
         {
             CheckpointPath = parsed["checkpoint"] ?? string.Empty,
-            Prompt = parsed.TryGetValue("prompt", out var prompt) ? prompt ?? string.Empty : string.Empty,
             MaxTokens = ArgParsing.GetInt(parsed, "max-tokens", 200),
             Temperature = ArgParsing.GetFloat(parsed, "temperature", 0.8f),
             TopK = ArgParsing.GetInt(parsed, "top-k", 0),
@@ -72,6 +70,31 @@ public static class Program
             Deterministic = !ArgParsing.GetBool(parsed, "no-sampler-determinism", false),
             Verbose = ArgParsing.GetBool(parsed, "verbose", false)
         };
+    }
+
+    private static void RunInteractiveLoop(CharTokenizer tokenizer, IModel model, Sampler sampler, InferenceConfig config)
+    {
+        while (true)
+        {
+            Console.Write("What's on the agenda today? ");
+            var prompt = Console.ReadLine();
+
+            if (prompt is null)
+            {
+                Console.WriteLine();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(prompt))
+            {
+                Console.WriteLine("Goodbye!");
+                return;
+            }
+
+            var result = sampler.Generate(tokenizer, model, prompt, config.MaxTokens, config.Temperature, config.TopK);
+            Console.WriteLine(result);
+            Console.WriteLine();
+        }
     }
 
     private static IModel CreateModelFromCheckpoint(CheckpointModel checkpoint, int seed)
